@@ -1,0 +1,17 @@
+# macOS
+.DS_Store
+
+# Go build artifacts
+*.test
+*.out
+coverage.out
+dist/
+tmp/
+
+# Editor and local env files
+.env
+.env.*
+
+# Optional local runtime assets
+libomoikane.so
+libomoikane.dylib
