@@ -18,7 +18,7 @@ import (
 )
 
 const (
-	defaultVersion = "v0.1.0"
+	defaultVersion = "v0.2.2"
 	releaseBaseURL = "https://github.com/ieee0824/omoikane/releases/download"
 )
 
@@ -30,18 +30,20 @@ type Browser struct {
 }
 
 type library struct {
-	handle      uintptr
-	initFn      func() unsafe.Pointer
-	freeFn      func(unsafe.Pointer)
-	navigateFn  func(unsafe.Pointer, *byte) bool
-	evaluateFn  func(unsafe.Pointer, *byte) *byte
-	contentFn   func(unsafe.Pointer) *byte
-	lastErrorFn func(unsafe.Pointer) *byte
-	stringFree  func(*byte)
+	handle         uintptr
+	initFn         func() unsafe.Pointer
+	freeFn         func(unsafe.Pointer)
+	navigateFn     func(unsafe.Pointer, *byte) bool
+	setUserAgentFn func(unsafe.Pointer, *byte) bool
+	evaluateFn     func(unsafe.Pointer, *byte) *byte
+	contentFn      func(unsafe.Pointer) *byte
+	lastErrorFn    func(unsafe.Pointer) *byte
+	stringFree     func(*byte)
 }
 
 type Options struct {
 	Version     string
+	UserAgent   string
 	LibraryPath string
 	CacheDir    string
 	HTTPClient  *http.Client
@@ -63,10 +65,19 @@ func NewBrowser(opts ...Options) (*Browser, error) {
 		return nil, errors.New("omoikane_init returned null")
 	}
 
-	return &Browser{
+	browser := &Browser{
 		lib:    lib,
 		handle: handle,
-	}, nil
+	}
+
+	if options.UserAgent != "" {
+		if err := browser.SetUserAgent(options.UserAgent); err != nil {
+			browser.Close()
+			return nil, err
+		}
+	}
+
+	return browser, nil
 }
 
 func (b *Browser) Navigate(url string) error {
@@ -100,6 +111,25 @@ func (b *Browser) Evaluate(expression string) (json.RawMessage, error) {
 
 	raw := copyCString(result)
 	return json.RawMessage(raw), nil
+}
+
+func (b *Browser) SetUserAgent(userAgent string) error {
+	if err := b.ensureOpen(); err != nil {
+		return err
+	}
+
+	if b.lib.setUserAgentFn == nil {
+		return errors.New("omoikane library does not support user agent configuration; require v0.2.2+")
+	}
+
+	userAgentPtr, freeUserAgent := cString(userAgent)
+	defer freeUserAgent()
+
+	if b.lib.setUserAgentFn(b.handle, userAgentPtr) {
+		return nil
+	}
+
+	return b.lastError()
 }
 
 func (b *Browser) Content() (string, error) {
@@ -175,6 +205,9 @@ func loadLibrary(opts Options) (*library, error) {
 	purego.RegisterLibFunc(&lib.initFn, handle, "omoikane_init")
 	purego.RegisterLibFunc(&lib.freeFn, handle, "omoikane_free")
 	purego.RegisterLibFunc(&lib.navigateFn, handle, "omoikane_navigate")
+	if _, err := purego.Dlsym(handle, "omoikane_set_user_agent"); err == nil {
+		purego.RegisterLibFunc(&lib.setUserAgentFn, handle, "omoikane_set_user_agent")
+	}
 	purego.RegisterLibFunc(&lib.evaluateFn, handle, "omoikane_evaluate")
 	purego.RegisterLibFunc(&lib.contentFn, handle, "omoikane_get_content")
 	purego.RegisterLibFunc(&lib.lastErrorFn, handle, "omoikane_last_error")

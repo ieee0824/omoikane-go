@@ -6,7 +6,7 @@
 
 - `omoikane` 本体の GitHub Releases から共有ライブラリを取得します
 - macOS と Linux の `amd64` / `arm64` を対象にしています
-- 既定では `v0.1.0` を使います
+- 既定では `v0.2.2` を使います
 - `OMOIKANE_LIBRARY_PATH` を設定すると、ローカルの `.dylib` / `.so` を優先して読み込みます
 
 ## インストール
@@ -27,7 +27,9 @@ import (
 )
 
 func main() {
-	browser, err := omoikane.NewBrowser()
+	browser, err := omoikane.NewBrowser(omoikane.Options{
+		UserAgent: "omoikane-go-example/0.2.2",
+	})
 	if err != nil {
 		panic(err)
 	}
@@ -50,7 +52,16 @@ func main() {
 
 ```go
 browser, err := omoikane.NewBrowser(omoikane.Options{
-	Version: "v0.1.0",
+	Version: "v0.2.2",
+})
+```
+
+## User-Agent を指定する
+
+```go
+browser, err := omoikane.NewBrowser(omoikane.Options{
+	Version:   "v0.2.2",
+	UserAgent: "my-app/1.0",
 })
 ```
 

@@ -38,6 +38,12 @@ func TestArchiveNamesRejectsUnsupportedPlatform(t *testing.T) {
 	}
 }
 
+func TestDefaultVersion(t *testing.T) {
+	if defaultVersion != "v0.2.2" {
+		t.Fatalf("defaultVersion = %q", defaultVersion)
+	}
+}
+
 func TestBrowserWithLocalLibrary(t *testing.T) {
 	libPath := os.Getenv("OMOIKANE_LIBRARY_PATH")
 	if libPath == "" {
@@ -58,6 +64,10 @@ func TestBrowserWithLocalLibrary(t *testing.T) {
 
 	if err := browser.Navigate(`data:text/html,<html><body><main id="app">hello</main></body></html>`); err != nil {
 		t.Fatalf("Navigate: %v", err)
+	}
+
+	if err := browser.SetUserAgent("omoikane-go-test/0.2.2"); err != nil {
+		t.Fatalf("SetUserAgent: %v", err)
 	}
 
 	result, err := browser.Evaluate(`document.getElementById("app").nodeName`)

@@ -8,7 +8,9 @@ import (
 )
 
 func main() {
-	browser, err := omoikane.NewBrowser()
+	browser, err := omoikane.NewBrowser(omoikane.Options{
+		UserAgent: "omoikane-go-example/0.2.2",
+	})
 	if err != nil {
 		log.Fatalf("create browser: %v", err)
 	}
