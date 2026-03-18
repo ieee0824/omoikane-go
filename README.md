@@ -65,6 +65,13 @@ browser, err := omoikane.NewBrowser(omoikane.Options{
 })
 ```
 
+## サンプル
+
+```bash
+go run ./examples/visit_localhost
+go run ./examples/get_ogp_image https://example.com
+```
+
 ## ローカルビルドを使う
 
 ```bash
